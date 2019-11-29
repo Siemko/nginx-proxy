@@ -1,27 +1,27 @@
 {{ $CurrentContainer := where $ "ID" .Docker.CurrentContainerID | first }}
 
 {{ define "upstream" }}
-  {{ if and .IP .Port }}
-    # {{ .Container.Name }} with manually set IP
-    server {{ .IP }}:{{ .Port }};
-	{{ else if .Address }}
-		{{/* If we got the containers from swarm and this container's port is published to host, use host IP:PORT */}}
-		{{ if and .Container.Node.ID .Address.HostPort }}
-			# {{ .Container.Node.Name }}/{{ .Container.Name }}
-			server {{ .Container.Node.Address.IP }}:{{ .Address.HostPort }};
-		{{/* If there is no swarm node or the port is not published on host, use container's IP:PORT */}}
+	{{ if and .IP .Port }}
+		# {{ .Container.Name }} with manually set IP
+		server {{ .IP }}:{{ .Port }};
+		{{ else if .Address }}
+			{{/* If we got the containers from swarm and this container's port is published to host, use host IP:PORT */}}
+			{{ if and .Container.Node.ID .Address.HostPort }}
+				# {{ .Container.Node.Name }}/{{ .Container.Name }}
+				server {{ .Container.Node.Address.IP }}:{{ .Address.HostPort }};
+			{{/* If there is no swarm node or the port is not published on host, use container's IP:PORT */}}
+			{{ else if .Network }}
+				# {{ .Container.Name }}
+				server {{ .Network.IP }}:{{ .Address.Port }};
+			{{ end }}
 		{{ else if .Network }}
 			# {{ .Container.Name }}
-			server {{ .Network.IP }}:{{ .Address.Port }};
+			{{ if .Network.IP }}
+				server {{ .Network.IP }} down;
+			{{ else }}
+				server 127.0.0.1 down;
+			{{ end }}
 		{{ end }}
-	{{ else if .Network }}
-		# {{ .Container.Name }}
-		{{ if .Network.IP }}
-			server {{ .Network.IP }} down;
-		{{ else }}
-			server 127.0.0.1 down;
-		{{ end }}
-	{{ end }}
 {{ end }}
 
 {{ define "ssl_policy" }}
